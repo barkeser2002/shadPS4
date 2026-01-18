@@ -218,6 +218,22 @@ void Module::LoadModuleToMemory(u32& max_tls_index) {
             }
             break;
         }
+        case PT_INTERP: {
+            std::string interpreter_path(elf_pheader[i].p_filesz, '\0');
+            elf.LoadSegment(reinterpret_cast<u64>(interpreter_path.data()), elf_pheader[i].p_offset,
+                            elf_pheader[i].p_filesz);
+            if (!interpreter_path.empty() && interpreter_path.back() == '\0') {
+                interpreter_path.pop_back();
+            }
+            LOG_INFO(Core_Linker, "Interpreter Path: {}", interpreter_path);
+            break;
+        }
+        case PT_SCE_COMMENT:
+            LOG_INFO(Core_Linker, "SCE Comment found");
+            break;
+        case PT_SCE_LIBVERSION:
+            LOG_INFO(Core_Linker, "SCE Library Version found");
+            break;
         default:
             LOG_ERROR(Core_Linker, "Unimplemented type {}", header_type);
         }
@@ -381,6 +397,10 @@ void Module::LoadDynamicInfo() {
             full_name.copy(this->info.name.data(), full_name.size());
             break;
         };
+        case DT_SONAME:
+            dynamic_info.soname = dynamic_info.str_table + dyn->d_un.d_val;
+            LOG_INFO(Core_Linker, "DT_SONAME value .....................: {}", dynamic_info.soname);
+            break;
         case DT_SCE_MODULE_ATTR:
             LOG_INFO(Core_Linker, "unsupported DT_SCE_MODULE_ATTR value = ..........: {:#018x}",
                      dyn->d_un.d_val);
@@ -392,6 +412,10 @@ void Module::LoadDynamicInfo() {
             info.enc_id = EncodeId(info.id);
             break;
         }
+        case DT_SCE_EXPORT_LIB_ATTR:
+            LOG_INFO(Core_Linker, "unsupported DT_SCE_EXPORT_LIB_ATTR value = ......: {:#018x}",
+                     dyn->d_un.d_val);
+            break;
         default:
             LOG_INFO(Core_Linker, "unsupported dynamic tag ..........: {:#018x}", dyn->d_tag);
         }
