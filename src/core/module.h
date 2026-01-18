@@ -133,6 +133,7 @@ struct DynamicModuleInfo {
     std::vector<LibraryInfo> export_libs;
 
     std::string filename;
+    std::string soname;
 };
 
 using ModuleFunc = int (*)(size_t, const void*);
